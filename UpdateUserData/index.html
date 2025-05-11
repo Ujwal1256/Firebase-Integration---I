@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updating User Data in Firebase</title>
+   <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Manage Users</h1>
+    <form id="userform">
+    <input type="text" id="name" placeholder="Enter name" required />
+    <input type="text" id="email" placeholder="Enter email" required />
+    <button type="submit" id="submitBtn">Add User</button>
+    </form>
+      <p class="message" id="message"></p>
+
+      <table id="userTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+    <script src="script.js"></script>
+</body>
+</html>
