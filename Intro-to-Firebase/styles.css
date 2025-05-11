@@ -1,0 +1,30 @@
+body{
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+h1{
+    color: #333;
+    text-align: center;
+}
+table{
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+table, th, td{
+    border: 1px solid #ddd;
+}
+th, td{
+    padding: 8px 12px;
+    text-align: left;
+}
+#usersTable{
+    margin-top: 20px;
+}
+#errorMessage{
+    color: red;
+    text-align: center;
+}
