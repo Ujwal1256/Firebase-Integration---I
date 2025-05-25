@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debugging: Fix the Broken Delete Function</title>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+h1 {
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+input {
+    margin: 5px;
+    padding: 8px;
+    font-size: 16px;
+    width: 300px;
+    max-width: 100%;
+}
+
+button {
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+button.delete-btn {
+    background-color: #f44336;
+}
+
+button.delete-btn:hover {
+    background-color: #e53935;
+}
+
+#message {
+    text-align: center;
+    font-weight: bold;
+}
+
+#error {
+    color: red;
+}
+
+#success {
+    color: green;
+}
+    </style>
+</head>
+<body>
+
+    <h1>Manage Users</h1>
+
+    <form id="userForm">
+        <input type="text" id="name" placeholder="Enter name" required>
+        <input type="email" id="email" placeholder="Enter email" required>
+        <button type="submit" id="submitBtn">Add User</button>
+    </form>
+    <p id="message"></p>
+
+    <table id="userTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</body>
+</html>
+
+<script>
+     const dbUrl = 'https://newproject-18291-default-rtdb.firebaseio.com/users.json';
+
+// Get DOM elements
+const form = document.getElementById('userForm');
+const nameInput = document.getElementById('name');
+const emailInput = document.getElementById('email');
+const submitBtn = document.getElementById('submitBtn');
+const message = document.getElementById('message');
+const userTable = document.getElementById('userTable').getElementsByTagName('tbody')[0];
+
+let editMode = false;
+let currentEditId = null;
+
+// Fetch and display users
+async function fetchUsers() {
+  try {
+    const res = await fetch(dbUrl);
+    if (!res.ok) throw new Error('Failed to fetch data');
+    
+    const data = await res.json();
+    userTable.innerHTML = ''; 
+    
+    for (let id in data) {
+      const user = data[id];
+      const row = userTable.insertRow();
+      row.setAttribute('id', id);  
+      row.innerHTML = `
+        <td>${user.name}</td>
+        <td>${user.email}</td>
+        <td>
+          <button onclick="openEdit('${id}', '${user.name}', '${user.email}')">Edit</button>
+          <button class="delete-btn" onclick="deleteUser('${id}')">Delete</button>
+        </td>
+      `;
+    }
+  } catch (err) {
+    message.textContent = '❌ ' + err.message;
+    message.classList.add('error');
+  }
+}
+
+// Open the Edit form
+window.openEdit = function (id, name, email) {
+  nameInput.value = name;
+  emailInput.value = email;
+  submitBtn.textContent = 'Update User';
+  editMode = true;
+  currentEditId = id;
+  message.textContent = '';
+};
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const name = nameInput.value.trim();
+  const email = emailInput.value.trim();
+  
+  if (!name || !email) {
+    message.textContent = '❌ Please fill in both fields';
+    message.classList.add('error');
+    return;
+  }
+
+  const user = { name, email };
+  
+  try {
+    let res;
+    const url = editMode ? `https://newproject-18291-default-rtdb.firebaseio.com/users/${currentEditId}.json` : dbUrl;
+    const method = editMode ? 'PATCH' : 'POST';
+
+    res = await fetch(url, {
+      method,
+      body: JSON.stringify(user),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!res.ok) throw new Error('Failed to save user');
+    
+    message.textContent = editMode ? '✅ User updated!' : '✅ User added!';
+    message.classList.remove('error');
+    form.reset();
+    submitBtn.textContent = 'Add User';
+    editMode = false;
+    currentEditId = null;
+
+    fetchUsers(); 
+  } catch (err) {
+    message.textContent = '❌ ' + err.message;
+    message.classList.add('error');
+  }
+});
+
+// Delete user
+window.deleteUser = function (key) {
+  fetch(`https://newproject-18291-default-rtdb.firebaseio.com/users/${key}.json`, {
+    method: 'DELETE',
+  })
+  .then(response => response.json())
+  .then(() => {
+    console.log("User deleted successfully");
+
+    document.getElementById(key).remove();
+    message.textContent = '✅ User deleted!';
+    message.classList.remove('error');
+    message.classList.add('success');
+  })
+  .catch(error => {
+    console.error("Error deleting user:", error);
+    message.textContent = '❌ Error deleting user';
+    message.classList.add('error');
+  });
+};
+
+// Initial fetch of users
+fetchUsers();
+</script>
