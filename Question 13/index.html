@@ -1,0 +1,191 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updating User Data in Firebase</title>
+   <style>
+    body{
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 10px;
+    padding: 20px;
+}
+h1{
+    color: #333;
+}
+#userform{
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+input[type="text"],
+input[type="email"]{
+    width: 90%;
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+button{
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+button:hover{
+    background-color: #218838;
+}
+
+.message {
+  margin-top: 10px;
+  color: green;
+}
+
+.error {
+  color: red;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+th {
+  background-color: #f2f2f2;
+  text-align: left;
+}
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+tr:hover {
+  background-color: #f1f1f1;
+}
+   </style>
+</head>
+<body>
+    <h1>Manage Users</h1>
+    <form id="userform">
+    <input type="text" id="name" placeholder="Enter name" required />
+    <input type="text" id="email" placeholder="Enter email" required />
+    <button type="submit" id="submitBtn">Add User</button>
+    </form>
+      <p class="message" id="message"></p>
+
+      <table id="userTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+    
+</body>
+</html>
+<script>
+    const dbUrl = 'https://newproject-18291-default-rtdb.firebaseio.com/users.json';
+
+const form = document.getElementById('userform');
+const nameInput = document.getElementById('name');
+const emailInput = document.getElementById('email');
+const submitBtn = document.getElementById('submitBtn');
+const message = document.getElementById('message');
+const userTable = document.getElementById('userTable').getElementsByTagName('tbody')[0];
+
+let editMode = false;
+let currentEditId = null;
+
+// Fetch and display users
+async function fetchUsers() {
+  try {
+    const res = await fetch(dbUrl);
+    if (!res.ok) throw new Error('Failed to fetch data');
+    
+    const data = await res.json();
+    userTable.innerHTML = ''; // Clear the table before adding new rows
+    
+    for (let id in data) {
+      const user = data[id];
+      const row = userTable.insertRow();
+      row.innerHTML = `
+        <td>${user.name}</td>
+        <td>${user.email}</td>
+        <td>
+          <button onclick="openEdit('${id}', '${user.name}', '${user.email}')">Edit</button>
+        </td>
+      `;
+    }
+  } catch (err) {
+    message.textContent = '❌ ' + err.message;
+    message.classList.add('error');
+  }
+}
+
+// Open the Edit form
+window.openEdit = function (id, name, email) {
+  nameInput.value = name;
+  emailInput.value = email;
+  submitBtn.textContent = 'Update User';
+  editMode = true;
+  currentEditId = id;
+  message.textContent = '';
+};
+
+// Handle form submission (Add or Update)
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const name = nameInput.value.trim();
+  const email = emailInput.value.trim();
+  
+  if (!name || !email) {
+    message.textContent = '❌ Please fill in both fields';
+    message.classList.add('error');
+    return;
+  }
+
+  const user = { name, email };
+  
+  try {
+    let res;
+    const url = editMode ? `https://newproject-18291-default-rtdb.firebaseio.com/users/${currentEditId}.json` : dbUrl;
+    const method = editMode ? 'PATCH' : 'POST';
+
+    res = await fetch(url, {
+      method,
+      body: JSON.stringify(user),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!res.ok) throw new Error('Failed to save user');
+    
+    message.textContent = editMode ? '✅ User updated!' : '✅ User added!';
+    message.classList.remove('error');
+    form.reset();
+    submitBtn.textContent = 'Add User';
+    editMode = false;
+    currentEditId = null;
+
+    fetchUsers(); // Refresh user list
+  } catch (err) {
+    message.textContent = '❌ ' + err.message;
+    message.classList.add('error');
+  }
+});
+
+// Initial fetch of users
+fetchUsers();
+</script>
